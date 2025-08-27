@@ -1,0 +1,10 @@
+*_pb.js
+*_pb.d.ts
+*Pb.ts
+*.json
+vue-extension
+node_modules
+#vite.config.ts
+#vitest.config.ts
+jest.config.js
+tests
