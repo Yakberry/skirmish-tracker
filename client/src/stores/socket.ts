@@ -8,6 +8,7 @@ import type { BattleCharacter, Character, CreateCharacterRequest, SocketSession 
 
 interface SocketState extends SocketSession {
     socket: Socket | null;
+    isMaster: boolean;
 }
 
 export const useSocketStore = defineStore('socket', {
@@ -15,6 +16,7 @@ export const useSocketStore = defineStore('socket', {
         socket: null,
         sessionId: null,
         isConnected: false,
+        isMaster: false,
         players: []
     }),
 
@@ -85,6 +87,27 @@ export const useSocketStore = defineStore('socket', {
                       console.error('Failed to add character to battle:', data.error)
                   }
               })
+
+            // Обработчик получения состояния трекера
+            this.socket.on('tracker:state', (data: {
+                characters: BattleCharacter[];
+                initiativeOrder: string[]
+            }) => {
+                const initiativeStore = useInitiativeStore()
+
+                initiativeStore.setCharacters(data.characters)
+                initiativeStore.setInitiativeOrder(data.initiativeOrder)
+            })
+
+            // Обработчик обновления отдельного персонажа
+            this.socket.on('character:updated', (character: BattleCharacter) => {
+                const initiativeStore = useInitiativeStore()
+
+                initiativeStore.updateCharacter(character)
+            })
+            this.socket.on('session:master', (data: { isMaster: boolean }) => {
+                this.isMaster = data.isMaster
+            })
         },
 
         createSession() {
@@ -131,6 +154,31 @@ export const useSocketStore = defineStore('socket', {
                     sessionId: this.sessionId,
                     characterId
                 });
+            }
+        },
+
+        // Синхронизация трекера со всеми клиентами
+        syncTracker() {
+            if (this.socket && this.sessionId) {
+                this.socket.emit('tracker:sync', { sessionId: this.sessionId })
+            }
+        },
+
+        // Сброс инициативы и стресса
+        resetCharacters() {
+            if (this.socket && this.sessionId) {
+                this.socket.emit('characters:reset', { sessionId: this.sessionId })
+            }
+        },
+
+        // Обновление данных персонажа
+        updateCharacter(characterId: string, updates: Partial<Character>) {
+            if (this.socket && this.sessionId) {
+                this.socket.emit('character:update', {
+                    sessionId: this.sessionId,
+                    characterId,
+                    updates
+                })
             }
         }
     }

@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { AppSocket, BattleCharacter, CreateCharacterRequest, SessionData } from "../types";
+import { AppSocket, BattleCharacter, CharacterData, CreateCharacterRequest, SessionData } from "../types";
 import { Character } from "../models/Character";
 
 // Хранилище активных сессий в памяти
@@ -17,6 +17,7 @@ export const initializeSockets = (io: Server): void => {
         id: sessionId,
         initiativeOrder: [],
         charactersInBattle: [],
+        masterSocketId: socket.id, // Запоминаем сокет мастера
       });
 
       socket.join(sessionId);
@@ -38,6 +39,7 @@ export const initializeSockets = (io: Server): void => {
       socket.join(sessionId);
       socket.sessionId = sessionId;
       socket.playerName = playerName;
+      socket.emit('session:master', { isMaster: false });
 
       // Отправляем новому участнику текущее состояние сессии
       socket.emit('session:state', session);
@@ -242,6 +244,68 @@ export const initializeSockets = (io: Server): void => {
           success: false,
           error: 'Failed to add character to battle'
         });
+      }
+    });
+
+    socket.on('tracker:sync', (data: { sessionId: string }) => {
+      const session = activeSessions.get(data.sessionId);
+      if (session && socket.id === session.masterSocketId) {
+        // Рассылаем текущее состояние всем участникам сессии
+        io.to(data.sessionId).emit('tracker:state', {
+          characters: session.charactersInBattle,
+          initiativeOrder: session.initiativeOrder
+        });
+      }
+    });
+
+    // Сброс инициативы и стресса к значениям по умолчанию
+    socket.on('characters:reset', (data: { sessionId: string }) => {
+      const session = activeSessions.get(data.sessionId);
+      if (session && socket.id === session.masterSocketId) {
+        // Сбрасываем значения для всех персонажей в бою
+        session.charactersInBattle.forEach(character => {
+          character.initiative = character.defaultInitiative;
+          character.stress = 0;
+        });
+
+        // Пересортировываем инициативу
+        session.initiativeOrder = session.charactersInBattle
+          .filter(c => c.initiative > 0)
+          .sort((a, b) => b.initiative - a.initiative)
+          .map(c => c.id!);
+
+        // Рассылаем обновление всем участникам сессии
+        io.to(data.sessionId).emit('characters-in-battle:updated', session.charactersInBattle);
+        io.to(data.sessionId).emit('initiative:updated', session.initiativeOrder);
+      }
+    });
+
+    // Обновление отдельных значений персонажа
+    socket.on('character:update', (data: {
+      sessionId: string;
+      characterId: string;
+      updates: Partial<CharacterData>
+    }) => {
+      const session = activeSessions.get(data.sessionId);
+      if (session) {
+        const character = session.charactersInBattle.find(c => c.id === data.characterId);
+        if (character) {
+          // Обновляем значения
+          Object.assign(character, data.updates);
+
+          // Если обновили инициативу, пересортировываем
+          if (data.updates.initiative !== undefined) {
+            session.initiativeOrder = session.charactersInBattle
+              .filter(c => c.initiative > 0)
+              .sort((a, b) => b.initiative - a.initiative)
+              .map(c => c.id!);
+
+            io.to(data.sessionId).emit('initiative:updated', session.initiativeOrder);
+          }
+
+          // Рассылаем обновление конкретного персонажа
+          io.to(data.sessionId).emit('character:updated', character);
+        }
       }
     });
   });

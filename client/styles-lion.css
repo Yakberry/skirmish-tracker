@@ -1,0 +1,292 @@
+:root {
+    /* Обновлённая цветовая палитра клана Льва - более мрачная и контрастная */
+    --color-primary: #D4AF37;        /* Золотой - основной акцент */
+    --color-primary-dark: #B8860B;   /* Тёмное золото */
+    --color-secondary: #8B0000;      /* Тёмно-бордовый */
+    --color-secondary-dark: #600000; /* Ещё темнее бордовый */
+    --color-tertiary: #2F4F4F;       /* Тёмный серо-синий */
+    --color-tertiary-dark: #1E2E2E;  /* Ещё темнее */
+
+    /* Обновлённая тёмная палитра */
+    --color-dark: #0D0D0D;           /* Глубокий чёрный */
+    --color-darker: #050505;         /* Почти абсолютный чёрный */
+    --color-dark-accent: #1A1A1A;    /* Акцентный тёмный */
+
+    /* Светлые цвета */
+    --color-light: #F5F5F5;
+    --color-light-muted: #CCCCCC;
+    --color-muted: #666666;
+
+    /* Дополнительные цвета */
+    --color-success: #4CAF50;
+    --color-success-dark: #3D8B40;
+    --color-danger: #DC143C;
+    --color-danger-dark: #B22222;
+    --color-warning: #FF8C00;
+    --color-warning-dark: #FF7700;
+
+    /* Градиенты */
+    --gradient-lion: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    --gradient-lion-dark: linear-gradient(135deg, var(--color-secondary-dark) 0%, var(--color-primary-dark) 100%);
+    --gradient-dark: linear-gradient(135deg, var(--color-dark) 0%, var(--color-darker) 100%);
+
+    /* Тени */
+    --shadow-glow: 0 0 15px rgba(212, 175, 55, 0.4);
+    --shadow-glow-secondary: 0 0 15px rgba(139, 0, 0, 0.4);
+    --shadow-card: 0 4px 8px rgba(0, 0, 0, 0.8);
+    --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.5);
+
+    /* Размеры */
+    --border-radius: 8px;
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    /* Анимации */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+}
+
+/* Базовые стили */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--gradient-dark);
+    color: var(--color-light);
+    line-height: 1.6;
+    padding: var(--spacing-md);
+    min-height: 100vh;
+}
+
+/* Типография */
+h1, h2, h3, h4 {
+    color: var(--color-dark);
+    margin-bottom: var(--spacing-md);
+    text-shadow: 1px 1px 2px var(--color-light);
+}
+
+/* Контейнеры */
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.card {
+    background-color: var(--color-dark-accent);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-card);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+/* Базовый стиль кнопки */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-button);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Primary кнопка (Золотая) */
+.btn-primary {
+    background: var(--gradient-lion);
+    color: var(--color-darker);
+    border: 1px solid var(--color-primary);
+}
+
+.btn-primary:hover {
+    background: var(--gradient-lion-dark);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    background: linear-gradient(135deg, var(--color-secondary-dark) 0%, var(--color-primary-dark) 100%);
+    transform: translateY(0);
+}
+
+/* Secondary кнопка (Бордовая) */
+.btn-secondary {
+    background: var(--color-secondary);
+    color: var(--color-light);
+    border: 1px solid var(--color-secondary-dark);
+}
+
+.btn-secondary:hover {
+    background: var(--color-secondary-dark);
+    box-shadow: var(--shadow-glow-secondary);
+    transform: translateY(-2px);
+}
+
+.btn-secondary:active {
+    background: var(--color-secondary-dark);
+    transform: translateY(0);
+}
+
+/* Tertiary кнопка (Тёмная) */
+.btn-tertiary {
+    background: var(--color-tertiary);
+    color: var(--color-light);
+    border: 1px solid var(--color-tertiary-dark);
+}
+
+.btn-tertiary:hover {
+    background: var(--color-tertiary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-tertiary:active {
+    background: var(--color-tertiary-dark);
+    transform: translateY(0);
+}
+
+/* Кнопка опасности */
+.btn-danger {
+    background: var(--color-danger);
+    color: var(--color-light);
+    border: 1px solid var(--color-danger-dark);
+}
+
+.btn-danger:hover {
+    background: var(--color-danger-dark);
+    transform: translateY(-2px);
+}
+
+.btn-danger:active {
+    background: var(--color-danger-dark);
+    transform: translateY(0);
+}
+
+/* Инициатива */
+.initiative-tracker {
+    margin-top: var(--spacing-xl);
+}
+
+.initiative-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--color-primary);
+    transition: var(--transition-normal);
+}
+
+.initiative-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateX(2px);
+}
+
+.current-turn {
+    background: rgba(212, 175, 55, 0.12);
+    box-shadow: var(--shadow-glow);
+    border-left: 3px solid var(--color-secondary);
+}
+
+/* Формы */
+input, select {
+    width: 100%;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: var(--border-radius);
+    background-color: rgba(0, 0, 0, 0.4);
+    color: var(--color-light);
+    transition: var(--transition-fast);
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+/* Декоративные элементы */
+.divider {
+    height: 2px;
+    background: var(--gradient-lion);
+    margin: var(--spacing-lg) 0;
+    border: none;
+}
+
+.lion-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23D4AF37" d="M12 2L1 21h22L12 2zm0 4.5l8.5 14h-17L12 6.5z"/><path fill="%23D4AF37" d="M12 10.5l-3.5 6h7l-3.5-6z"/></svg>');
+    background-repeat: no-repeat;
+    transition: var(--transition-normal);
+}
+
+.btn:hover .lion-icon {
+    transform: scale(1.1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px;
+        padding: var(--spacing-sm);
+    }
+
+    .card {
+        padding: var(--spacing-md);
+    }
+
+    .btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 14px;
+    }
+
+    .initiative-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+}
+
+/* Анимации */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+}
+
+@keyframes pulse-secondary {
+    0% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(139, 0, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0); }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+.pulse-secondary {
+    animation: pulse-secondary 2s infinite;
+}

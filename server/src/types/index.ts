@@ -10,11 +10,13 @@ export interface CharacterData {
   fire: number;
   air: number;
   void: number;
+  defaultInitiative: number;
+  stress: number;
+  initiative: number;
   skills?: Record<string, number>;
 }
 
 export interface BattleCharacter extends CharacterData {
-  initiative: number;
   isVisible: boolean;
   conditions: string[];
 }
@@ -23,6 +25,7 @@ export interface SessionData {
   id: string;
   initiativeOrder: string[];
   charactersInBattle: BattleCharacter[];
+  masterSocketId: string;
 }
 
 export interface AppSocket extends Socket {
@@ -39,5 +42,8 @@ export interface CreateCharacterRequest {
   fire: number;
   air: number;
   void: number;
+  initiative: number;
+  defaultInitiative: number;
+  stress: number;
   skills?: Record<string, number>;
 }

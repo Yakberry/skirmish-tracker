@@ -10,6 +10,9 @@ interface CharacterAttributes {
   fire: number;
   air: number;
   void: number;
+  initiative: number;
+  defaultInitiative: number;
+  stress: number;
   skills: Record<string, number>;
 }
 
@@ -27,6 +30,9 @@ export class Character extends Model<CharacterAttributes, CharacterCreationAttri
   public air!: number;
   public void!: number;
   public skills!: Record<string, number>;
+  public defaultInitiative!: number;
+  public stress!: number;
+  public initiative!: number;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -75,6 +81,21 @@ export const initCharacter = (sequelize: Sequelize) => {
       skills: {
         type: DataTypes.JSON,
         defaultValue: {},
+      },
+      defaultInitiative: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        allowNull: false,
+      },
+      stress: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        allowNull: false,
+      },
+      initiative: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        allowNull: false,
       },
     },
     {

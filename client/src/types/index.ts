@@ -9,10 +9,13 @@ export interface Character {
   fire?: number;
   air?: number;
   void?: number;
+  defaultInitiative: number;
+  stress: number;
+  initiative: number;
+  skills?: Record<string, number>;
 }
 
 export interface BattleCharacter extends Character {
-  initiative: number;
   isVisible: boolean;
   conditions: string[];
 }

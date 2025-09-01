@@ -1,8 +1,8 @@
 <template>
-  <div id="app">
+  <div id="layout">
     <h1>L5R Трекер Инициативы</h1>
     <ConnectionForm />
-    <TrackerList v-if="socketStore.isConnected && socketStore.sessionId" />
+    <TrackerList v-if="socketStore.isConnected" />
     <CharacterLibrary />
   </div>
 </template>
@@ -18,14 +18,15 @@ const socketStore = useSocketStore();
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+#layout {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  border-radius: 10px;
+  background: silver;
 }
 
 input,
@@ -37,12 +38,12 @@ button {
 }
 
 button {
-  background-color: #4caf50;
+  background-color: var(--color-dark);
   color: white;
   cursor: pointer;
 }
 
 button:hover {
-  background-color: #45a049;
+  background-color: var(--color-darker);
 }
 </style>

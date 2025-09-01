@@ -6,9 +6,71 @@
       {{ libraryStore.error }}
     </div>
 
+    <div class="characters-list">
+      <div class="list-header">
+        <h3>Доступные персонажи</h3>
+        <button :disabled="libraryStore.isLoading" @click="refreshCharacters">
+          {{ libraryStore.isLoading ? "Обновление..." : "Обновить" }}
+        </button>
+      </div>
+
+      <div
+        v-if="libraryStore.isLoading && libraryStore.characters.length === 0"
+        class="loading"
+      >
+        Загрузка персонажей...
+      </div>
+
+      <div v-else-if="libraryStore.characters.length === 0" class="empty-state">
+        Нет созданных персонажей. Создайте первого персонажа!
+      </div>
+
+      <div v-else class="characters-grid">
+        <div
+          v-for="character in libraryStore.characters"
+          :key="character.id"
+          class="card character-card"
+        >
+          <div class="character-info">
+            <h4>{{ character.name }}</h4>
+            <div class="stats">
+              <span class="stat">❤️ {{ character.health }}</span>
+              <span class="stat">💨 {{ character.fatigue }}</span>
+            </div>
+            <div class="rings">
+              <span class="ring">В{{ character.water }}</span>
+              <span class="ring">З{{ character.earth }}</span>
+              <span class="ring">О{{ character.fire }}</span>
+              <span class="ring">В{{ character.air }}</span>
+              <span class="ring">П{{ character.void }}</span>
+            </div>
+          </div>
+
+          <div class="character-actions">
+            <button
+              :disabled="!socketStore.isConnected || !socketStore.sessionId"
+              class="add-button"
+              @click="addToBattle(character.id!)"
+            >
+              Добавить в бой
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="create-form">
-      <h3>Создать нового персонажа</h3>
-      <form @submit.prevent="createCharacter">
+      <header class="add-character-form__header" @click="toggleSection">
+        <h3>Создать нового персонажа</h3>
+        <img
+          :class="{ 'add-character-form__header-icon_opened': isSectionOpened }"
+          class="add-character-form__header-icon"
+          src="../assets/svg/chevron.svg"
+          alt=""
+        />
+      </header>
+
+      <form v-show="isSectionOpened" @submit.prevent="createCharacter">
         <input v-model="newCharacter.name" placeholder="Имя" required />
         <input
           v-model.number="newCharacter.health"
@@ -61,59 +123,6 @@
         </div>
       </form>
     </div>
-
-    <div class="characters-list">
-      <div class="list-header">
-        <h3>Доступные персонажи</h3>
-        <button :disabled="libraryStore.isLoading" @click="refreshCharacters">
-          {{ libraryStore.isLoading ? "Обновление..." : "Обновить" }}
-        </button>
-      </div>
-
-      <div
-        v-if="libraryStore.isLoading && libraryStore.characters.length === 0"
-        class="loading"
-      >
-        Загрузка персонажей...
-      </div>
-
-      <div v-else-if="libraryStore.characters.length === 0" class="empty-state">
-        Нет созданных персонажей. Создайте первого персонажа!
-      </div>
-
-      <div v-else class="characters-grid">
-        <div
-          v-for="character in libraryStore.characters"
-          :key="character.id"
-          class="character-card"
-        >
-          <div class="character-info">
-            <h4>{{ character.name }}</h4>
-            <div class="stats">
-              <span class="stat">❤️ {{ character.health }}</span>
-              <span class="stat">💨 {{ character.fatigue }}</span>
-            </div>
-            <div class="rings">
-              <span class="ring">В{{ character.water }}</span>
-              <span class="ring">З{{ character.earth }}</span>
-              <span class="ring">О{{ character.fire }}</span>
-              <span class="ring">В{{ character.air }}</span>
-              <span class="ring">П{{ character.void }}</span>
-            </div>
-          </div>
-
-          <div class="character-actions">
-            <button
-              :disabled="!socketStore.isConnected || !socketStore.sessionId"
-              class="add-button"
-              @click="addToBattle(character.id!)"
-            >
-              Добавить в бой
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -122,6 +131,7 @@ import { ref, onMounted } from "vue";
 
 import { useLibraryStore } from "@/stores/library";
 import { useSocketStore } from "@/stores/socket";
+
 import type { Character } from "@/types";
 
 const libraryStore = useLibraryStore();
@@ -138,12 +148,18 @@ const newCharacter = ref<Partial<Character>>({
   void: 2
 });
 
+const isSectionOpened = ref<boolean>(false);
+
 onMounted(() => {
   refreshCharacters();
 });
 
 const refreshCharacters = () => {
   libraryStore.loadCharacters();
+};
+
+const toggleSection = () => {
+  isSectionOpened.value = !isSectionOpened.value;
 };
 
 const createCharacter = () => {
@@ -197,7 +213,7 @@ const addToBattle = (characterId: string) => {
 }
 
 .create-form h3 {
-  margin-top: 0;
+  margin-block: 0;
 }
 
 .create-form input {
@@ -298,5 +314,24 @@ const addToBattle = (characterId: string) => {
 .add-button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+}
+
+.add-character-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.add-character-form__header-icon {
+  color: red;
+  transition: transform 0.5s ease;
+  transform: rotate(90deg);
+  display: block;
+  height: 22px;
+  width: 22px;
+}
+
+.add-character-form__header-icon_opened {
+  transform: rotate(-450deg);
 }
 </style>

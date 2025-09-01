@@ -2,12 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/Elements.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Vue + TS</title>
+    <title>Skirmish Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles-lion.css">
 </head>
 <body>
 <div id="app"></div>
 <script type="module" src="./src/main.ts"></script>
+<script src="https://unpkg.com/vue-css-donut-chart@2"></script>
 </body>
+<style>
+  body {
+      /*height: 100dvh;*/
+      background: linear-gradient(75deg, firebrick, transparent);
+      font-family: 'Noto Sans JP', Avenir, Helvetica, Arial, sans-serif;
+      /*background-size: auto 100dvh;*/
+  }
+</style>
 </html>
