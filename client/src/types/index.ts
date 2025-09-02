@@ -1,36 +1,44 @@
-export interface Character {
-  id: string;
+export interface CharacterData {
+  id?: string;
   name: string;
-  health: number;
-  fatigue: number;
-  // Другие характеристики персонажа L5R
-  water?: number;
-  earth?: number;
-  fire?: number;
-  air?: number;
-  void?: number;
-  defaultInitiative: number;
-  stress: number;
+  strife: number;
+  maxStrife: number;
+  stance: string;
+  water: number;
+  earth: number;
+  fire: number;
+  air: number;
+  void: number;
   initiative: number;
-  skills?: Record<string, number>;
-}
-
-export interface BattleCharacter extends Character {
-  isVisible: boolean;
+  defaultInitiative: number;
   conditions: string[];
+  notes: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
-export interface Condition {
+export interface BattleCharacter extends CharacterData {
+  isVisible: boolean;
+}
+
+export interface SessionData {
   id: string;
-  name: string;
-  description: string;
-  // Другие свойства состояний
+  initiativeOrder: string[];
+  charactersInBattle: BattleCharacter[];
+  masterSocketId: string;
+}
+
+export interface UpdateCharacterRequest {
+  characterId: string;
+  updates: Partial<CharacterData>;
 }
 
 export interface SocketSession {
   sessionId: string | null;
   isConnected: boolean;
   players: string[];
+  playerName?: string;
+  isMaster?: boolean;
 }
 
 export interface CreateCharacterRequest {

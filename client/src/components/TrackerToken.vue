@@ -1,78 +1,57 @@
 <template>
   <div v-if="character" class="tracker-token">
-    <div class="character-main">
-      <div class="character-name">
-        {{ character.name }}
-      </div>
-      <img
-        class="tracker-token__stance"
-        src="../assets/image/Water.png"
-        alt="water"
-      />
-      <img
-        class="tracker-token__stance"
-        src="../assets/image/Earth.png"
-        alt="earth"
-      />
-      <img
-        class="tracker-token__stance"
-        src="../assets/image/Fire.png"
-        alt="fire"
-      />
-      <img
-        class="tracker-token__stance"
-        src="../assets/image/Air.png"
-        alt="air"
-      />
-      <img
-        class="tracker-token__stance"
-        src="../assets/image/Void.png"
-        alt="void"
-      />
-      <div class="character-stats">
-        <div class="stat-group">
-          <label>Инициатива</label>
-          <input
-            type="number"
-            :value="character.initiative"
-            :disabled="!isMaster"
-            @input="updateInitiative(($event.target as HTMLInputElement).value)"
-          />
-          <span class="default-value">({{ character.defaultInitiative }})</span>
-        </div>
-
-        <div class="stat-group">
-          <label>Стресс</label>
-          <input
-            type="number"
-            :value="character.stress"
-            :disabled="!isMaster"
-            @input="updateStress(($event.target as HTMLInputElement).value)"
-          />
-        </div>
-
-        <div class="stat-group">
-          <label>Здоровье</label>
-          <span class="stat-value">❤️ {{ character.health }}</span>
-        </div>
-
-        <div class="stat-group">
-          <label>Усталость</label>
-          <span class="stat-value">💨 {{ character.fatigue }}</span>
-        </div>
-      </div>
+    <div class="character-header">
+      <h3>{{ character.name }}</h3>
+      <span class="stance">{{ character.stance }}</span>
     </div>
 
-    <div class="character-rings">
-      <div v-for="ring in rings" :key="ring.name" class="ring">
-        <span class="ring-name">{{ ring.name }}</span>
-        <img
-          v-show="0"
-          class="tracker-token__stance"
-          :src="`../assets/image/${ring.alt}.png`"
-          :alt="ring.alt"
-        />
-        <span class="ring-value">{{ ring.value }}</span>
+    <div class="character-stats">
+      <div class="stat-row">
+        <label>Инициатива:</label>
+        <input
+          type="number"
+          :value="character.initiative"
+          :disabled="!isMaster"
+          @input="updateField('initiative', $event)"
+        >
+        <span class="default">({{ character.defaultInitiative }})</span>
+      </div>
+
+      <div class="stat-row">
+        <label>Стресс:</label>
+        <input
+          type="number"
+          :value="character.strife"
+          :disabled="!isMaster"
+          @input="updateField('strife', $event)"
+        >
+        <span>/ {{ character.maxStrife }}</span>
+      </div>
+
+      <div class="rings">
+        <div v-for="ring in rings" :key="ring.name" class="ring">
+          <span class="ring-name">{{ ring.name }}</span>
+          <span class="ring-value">{{ ring.value }}</span>
+        </div>
+      </div>
+
+      <div v-if="character.conditions.length" class="conditions">
+        <h4>Состояния:</h4>
+        <div class="condition-list">
+          <span v-for="condition in character.conditions" :key="condition" class="condition">
+            {{ condition }}
+          </span>
+        </div>
+      </div>
+
+      <div v-if="character.notes" class="notes">
+        <h4>Заметки:</h4>
+        <textarea
+          :value="character.notes"
+          :disabled="!isMaster"
+          placeholder="Заметки о персонаже"
+          @input="updateField('notes', $event)"
+        ></textarea>
       </div>
     </div>
   </div>
@@ -81,40 +60,31 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import { useSocketStore } from "@/stores/socket";
 import type { BattleCharacter } from "@/types";
 
 const props = defineProps<{
-  character: BattleCharacter;
-  isMaster: boolean;
+  character: BattleCharacter
+  isMaster: boolean
 }>();
 
-const emit = defineEmits<{
-  (e: "update-initiative", characterId: string, newInitiative: number): void;
-  (e: "update-stress", characterId: string, newStress: number): void;
-}>();
+const socketStore = useSocketStore();
 
 const rings = computed(() => [
-  { name: "Вода", value: props.character.water, alt: "Water" },
-  { name: "Земля", value: props.character.earth, alt: "Earth" },
-  { name: "Огонь", value: props.character.fire, alt: "Fire" },
-  { name: "Воздух", value: props.character.air, alt: "Air" },
-  { name: "Пустота", value: props.character.void, alt: "Void" }
+  { name: "Вода", value: props.character.water },
+  { name: "Земля", value: props.character.earth },
+  { name: "Огонь", value: props.character.fire },
+  { name: "Воздух", value: props.character.air },
+  { name: "Пустота", value: props.character.void }
 ]);
 
-const updateInitiative = (newValue: string) => {
-  const numValue = parseInt(newValue);
+const updateField = (field: string, event: Event) => {
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+  const value = field === "notes" ? target.value : Number(target.value);
 
-  if (!isNaN(numValue)) {
-    emit("update-initiative", props.character.id!, numValue);
-  }
-};
-
-const updateStress = (newValue: string) => {
-  const numValue = parseInt(newValue);
-
-  if (!isNaN(numValue)) {
-    emit("update-stress", props.character.id!, numValue);
-  }
+  socketStore.updateCharacter(props.character.id!, {
+    [field]: value
+  });
 };
 </script>
 
@@ -128,72 +98,64 @@ const updateStress = (newValue: string) => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.tracker-token__stance {
-  width: 30px;
-  height: 30px;
-  margin-left: 6px;
-}
-
-.character-main {
+.character-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.character-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.stance {
+  background-color: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
   margin-bottom: 10px;
 }
 
-.character-name {
+.stat-row label {
+  width: 80px;
   font-weight: bold;
-  font-size: 16px;
-  flex: 1;
 }
 
-.character-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.stat-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 80px;
-}
-
-.stat-group label {
-  font-size: 12px;
-  color: #757575;
-  margin-bottom: 4px;
-}
-
-.stat-group input {
-  width: 50px;
-  text-align: center;
+.stat-row input {
+  width: 60px;
   padding: 4px;
+  margin: 0 5px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  text-align: center;
 }
 
-.stat-group input:disabled {
+.stat-row input:disabled {
   background-color: #f5f5f5;
   cursor: not-allowed;
 }
 
-.default-value {
-  font-size: 11px;
-  color: #999;
-  margin-top: 2px;
+.default {
+  font-size: 12px;
+  color: #888;
 }
 
-.stat-value {
-  font-weight: bold;
-}
-
-.character-rings {
+.rings {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
+  margin: 15px 0;
+  padding: 10px 0;
   border-top: 1px solid #eee;
-  padding-top: 10px;
+  border-bottom: 1px solid #eee;
 }
 
 .ring {
@@ -203,12 +165,48 @@ const updateStress = (newValue: string) => {
 }
 
 .ring-name {
-  font-size: 11px;
-  color: #757575;
+  font-size: 12px;
+  color: #666;
 }
 
 .ring-value {
   font-weight: bold;
+  font-size: 16px;
+}
+
+.conditions, .notes {
+  margin-top: 15px;
+}
+
+.conditions h4, .notes h4 {
+  margin: 0 0 8px 0;
   font-size: 14px;
+}
+
+.condition-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.condition {
+  background-color: #e3f2fd;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.notes textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.notes textarea:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
 }
 </style>

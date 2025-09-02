@@ -1,185 +1,173 @@
 import { defineStore } from "pinia";
 import { io, Socket } from "socket.io-client";
 
-import { useInitiativeStore } from "@/stores/initiative.ts";
-import { useLibraryStore } from "@/stores/library";
+import { useInitiativeStore } from "./initiative";
+import { useLibraryStore } from "./library";
 
-import type { BattleCharacter, Character, CreateCharacterRequest, SocketSession } from "@/types";
+import type {
+  CharacterData,
+  BattleCharacter,
+  SocketSession,
+  UpdateCharacterRequest
+} from "@/types";
 
 interface SocketState extends SocketSession {
-    socket: Socket | null;
-    isMaster: boolean;
+  socket: Socket | null;
 }
 
-export const useSocketStore = defineStore('socket', {
-    state: (): SocketState => ({
-        socket: null,
-        sessionId: null,
-        isConnected: false,
-        isMaster: false,
-        players: []
-    }),
+export const useSocketStore = defineStore("socket", {
+  state: (): SocketState => ({
+    socket: null,
+    sessionId: null,
+    isConnected: false,
+    isMaster: false,
+    players: []
+  }),
 
-    actions: {
-        connect(serverUrl: string) {
+  actions: {
+    connect(serverUrl: string) {
+      this.socket = io(serverUrl);
 
-            console.log(serverUrl, this.$state);
+      this.socket.on("connect", () => {
+        this.isConnected = true;
+        console.log("Connected to server");
+      });
 
-            this.socket = io(serverUrl)
+      this.socket.on("disconnect", () => {
+        this.isConnected = false;
+        console.log("Disconnected from server");
+      });
 
-            this.socket.on('connect', () => {
-                this.isConnected = true
-                console.log('Connected to server')
-            })
+      this.socket.on("session:created", (data: { sessionId: string }) => {
+        this.sessionId = data.sessionId;
+      });
 
-            this.socket.on('disconnect', () => {
-                this.isConnected = false
-                console.log('Disconnected from server')
-            })
+      this.socket.on("session:master", (data: { isMaster: boolean }) => {
+        this.isMaster = data.isMaster;
+      });
 
-            this.socket.on('session:created', (data: { sessionId: string }) => {
-                this.sessionId = data.sessionId
-                console.log('Session created:', data.sessionId)
-            })
+      this.socket.on("session:state", (data: any) => {
+        const initiativeStore = useInitiativeStore();
 
-            this.socket.on('session:state', (data: any) => {
-                // Здесь будем обновлять состояние инициативы
-            })
+        initiativeStore.setCharacters(data.charactersInBattle || []);
+        initiativeStore.setInitiativeOrder(data.initiativeOrder || []);
+      });
 
-            this.socket.on('initiative:updated', (initiativeOrder: string[]) => {
-                const initiativeStore = useInitiativeStore()
+      this.socket.on("player:joined", (data: { playerName: string }) => {
+        this.players.push(data.playerName);
+      });
 
-                initiativeStore.updateInitiativeOrder(initiativeOrder)
-            })
+      this.socket.on("player:left", (data: { playerName: string }) => {
+        const index = this.players.indexOf(data.playerName);
 
-            this.socket.on('player:joined', (data: { playerName: string }) => {
-                console.log("new player! ", data);
-                this.players.push(data.playerName)
-            })
-
-            this.socket.on('player:left', (data: { playerName: string }) => {
-                const index = this.players.indexOf(data.playerName)
-
-                if (index > -1) {
-                    this.players.splice(index, 1)
-                }
-            })
-
-            this.socket.on('characters:list', (characters: Character[]) => {
-                const libraryStore = useLibraryStore()
-
-                libraryStore.setCharacters(characters)
-            })
-
-            this.socket.on('character:created', (character: Character) => {
-                const libraryStore = useLibraryStore()
-
-                libraryStore.addCharacter(character)
-            })
-
-            this.socket.on('character:add-to-battle-result',
-              (data: { success: boolean; character?: BattleCharacter; error?: string }) => {
-                  if (data.success && data.character) {
-                      const initiativeStore = useInitiativeStore()
-
-                      initiativeStore.addCharacter(data.character)
-                  } else {
-                      console.error('Failed to add character to battle:', data.error)
-                  }
-              })
-
-            // Обработчик получения состояния трекера
-            this.socket.on('tracker:state', (data: {
-                characters: BattleCharacter[];
-                initiativeOrder: string[]
-            }) => {
-                const initiativeStore = useInitiativeStore()
-
-                initiativeStore.setCharacters(data.characters)
-                initiativeStore.setInitiativeOrder(data.initiativeOrder)
-            })
-
-            // Обработчик обновления отдельного персонажа
-            this.socket.on('character:updated', (character: BattleCharacter) => {
-                const initiativeStore = useInitiativeStore()
-
-                initiativeStore.updateCharacter(character)
-            })
-            this.socket.on('session:master', (data: { isMaster: boolean }) => {
-                this.isMaster = data.isMaster
-            })
-        },
-
-        createSession() {
-            console.log(this.socket, this.$state);
-
-            if (this.socket) {
-                this.socket.emit('session:create')
-            }
-        },
-
-        joinSession(sessionId: string, playerName: string) {
-            if (this.socket) {
-                this.socket.emit('session:join', { sessionId, playerName })
-            }
-        },
-
-        updateInitiative(characterId: string, newScore: number) {
-            if (this.socket && this.sessionId) {
-                this.socket.emit('initiative:update', {
-                    sessionId: this.sessionId,
-                    characterId,
-                    newScore
-                })
-            }
-        },
-
-        requestCharacters() {
-            if (this.socket) {
-                this.socket.emit('characters:request');
-            }
-        },
-
-        // Создание нового персонажа
-        createCharacter(characterData: CreateCharacterRequest) {
-            if (this.socket) {
-                this.socket.emit('character:create', characterData);
-            }
-        },
-
-        // Добавление персонажа в бой
-        addCharacterToBattle(characterId: string) {
-            if (this.socket && this.sessionId) {
-                this.socket.emit('character:add-to-battle', {
-                    sessionId: this.sessionId,
-                    characterId
-                });
-            }
-        },
-
-        // Синхронизация трекера со всеми клиентами
-        syncTracker() {
-            if (this.socket && this.sessionId) {
-                this.socket.emit('tracker:sync', { sessionId: this.sessionId })
-            }
-        },
-
-        // Сброс инициативы и стресса
-        resetCharacters() {
-            if (this.socket && this.sessionId) {
-                this.socket.emit('characters:reset', { sessionId: this.sessionId })
-            }
-        },
-
-        // Обновление данных персонажа
-        updateCharacter(characterId: string, updates: Partial<Character>) {
-            if (this.socket && this.sessionId) {
-                this.socket.emit('character:update', {
-                    sessionId: this.sessionId,
-                    characterId,
-                    updates
-                })
-            }
+        if (index > -1) {
+          this.players.splice(index, 1);
         }
+      });
+
+      this.socket.on("characters:list", (characters: CharacterData[]) => {
+        const libraryStore = useLibraryStore();
+
+        libraryStore.setCharacters(characters);
+      });
+
+      this.socket.on("character:created", (character: CharacterData) => {
+        const libraryStore = useLibraryStore();
+
+        libraryStore.addCharacter(character);
+      });
+
+      this.socket.on("character:added", (character: CharacterData) => {
+        const libraryStore = useLibraryStore();
+
+        libraryStore.addCharacter(character);
+      });
+
+      this.socket.on(
+        "characters-in-battle:updated",
+        (characters: BattleCharacter[]) => {
+          const initiativeStore = useInitiativeStore();
+
+          initiativeStore.setCharacters(characters);
+        }
+      );
+
+      this.socket.on("initiative:updated", (initiativeOrder: string[]) => {
+        const initiativeStore = useInitiativeStore();
+
+        initiativeStore.setInitiativeOrder(initiativeOrder);
+      });
+
+      this.socket.on("character:updated", (character: Character) => {
+        const initiativeStore = useInitiativeStore();
+
+        initiativeStore.updateCharacter(character);
+      });
+
+      this.socket.on(
+        "tracker:state",
+        (data: {
+          characters: BattleCharacter[];
+          initiativeOrder: string[];
+        }) => {
+          const initiativeStore = useInitiativeStore();
+
+          initiativeStore.setCharacters(data.characters);
+          initiativeStore.setInitiativeOrder(data.initiativeOrder);
+        }
+      );
+
+      this.socket.on("error", (data: { message: string }) => {
+        console.error("Server error:", data.message);
+      });
+    },
+
+    createSession() {
+      if (this.socket) {
+        this.socket.emit("session:create");
+      }
+    },
+
+    joinSession(sessionId: string, playerName: string) {
+      if (this.socket) {
+        this.socket.emit("session:join", { sessionId, playerName });
+      }
+    },
+
+    requestCharacters() {
+      if (this.socket) {
+        this.socket.emit("characters:request");
+      }
+    },
+
+    createCharacter(characterData: Partial<CharacterData>) {
+      if (this.socket) {
+        this.socket.emit("character:create", characterData);
+      }
+    },
+
+    addCharacterToBattle(characterId: string) {
+      if (this.socket) {
+        this.socket.emit("character:add-to-battle", { characterId });
+      }
+    },
+
+    updateCharacter(characterId: string, updates: Partial<CharacterData>) {
+      if (this.socket) {
+        this.socket.emit("character:update", { characterId, updates });
+      }
+    },
+
+    syncTracker() {
+      if (this.socket) {
+        this.socket.emit("tracker:sync");
+      }
+    },
+
+    resetCharacters() {
+      if (this.socket) {
+        this.socket.emit("characters:reset");
+      }
     }
-    });
+  }
+});

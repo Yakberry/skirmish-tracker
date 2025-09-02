@@ -74,6 +74,7 @@ const createSession = () => {
 };
 
 const joinSession = () => {
+  console.log(sessionCode.value, playerName.value);
   if (sessionCode.value && playerName.value) {
     socketStore.joinSession(sessionCode.value, playerName.value);
     socketStore.isMaster = false;

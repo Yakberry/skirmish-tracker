@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { Character } from '../models/Character';
-import { CreateCharacterRequest } from '../types';
+import { CharacterData } from '../types';
 
 export const createCharacter = async (
-  req: Request<{}, {}, CreateCharacterRequest>,
+  req: Request<{}, {}, CharacterData>,
   res: Response
 ): Promise<void> => {
   try {
@@ -40,7 +40,7 @@ export const getCharacter = async (req: Request<{ id: string }>, res: Response):
 };
 
 export const updateCharacter = async (
-  req: Request<{ id: string }, {}, Partial<CreateCharacterRequest>>,
+  req: Request<{ id: string }, {}, Partial<CharacterData>>,
   res: Response
 ): Promise<void> => {
   try {
