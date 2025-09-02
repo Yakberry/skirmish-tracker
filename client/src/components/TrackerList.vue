@@ -46,6 +46,9 @@ const findCharacter = (characterId: string): BattleCharacter | undefined => {
 const updateInitiative = (characterId: string, newInitiative: number) => {
   initiativeStore.updateCharacterInitiative(characterId, newInitiative);
 };
+const updateCharacter = (characterId: string, newInitiative: number) => {
+  initiativeStore.updateCharacterInitiative(characterId, newInitiative);
+};
 
 const updateStress = (characterId: string, newStress: number) => {
   initiativeStore.updateCharacterStress(characterId, newStress);

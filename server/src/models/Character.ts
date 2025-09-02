@@ -3,8 +3,9 @@ import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 interface CharacterAttributes {
   id: string;
   name: string;
-  health: number;
-  fatigue: number;
+  strife: number;
+  maxStrife: number;
+  stance: string;
   water: number;
   earth: number;
   fire: number;
@@ -12,30 +13,34 @@ interface CharacterAttributes {
   void: number;
   initiative: number;
   defaultInitiative: number;
-  stress: number;
-  skills: Record<string, number>;
+  conditions: string[];
+  notes: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
-interface CharacterCreationAttributes extends Optional<CharacterAttributes, 'id' | 'skills'> {}
+interface CharacterCreationAttributes extends Optional<CharacterAttributes,
+  'id' | 'name' | 'strife' | 'maxStrife' | 'stance' | 'conditions' | 'notes' |
+  'created_at' | 'updated_at'> {}
 
 export class Character extends Model<CharacterAttributes, CharacterCreationAttributes>
   implements CharacterAttributes {
   public id!: string;
   public name!: string;
-  public health!: number;
-  public fatigue!: number;
+  public strife!: number;
+  public maxStrife!: number;
+  public stance!: string;
   public water!: number;
   public earth!: number;
   public fire!: number;
   public air!: number;
   public void!: number;
-  public skills!: Record<string, number>;
-  public defaultInitiative!: number;
-  public stress!: number;
   public initiative!: number;
-
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  public defaultInitiative!: number;
+  public conditions!: string[];
+  public notes!: string;
+  public created_at!: Date;
+  public updated_at!: Date;
 }
 
 export const initCharacter = (sequelize: Sequelize) => {
@@ -50,12 +55,19 @@ export const initCharacter = (sequelize: Sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      health: {
+      strife: {
         type: DataTypes.INTEGER,
+        defaultValue: 0,
         allowNull: false,
       },
-      fatigue: {
+      maxStrife: {
         type: DataTypes.INTEGER,
+        defaultValue: 10,
+        allowNull: false,
+      },
+      stance: {
+        type: DataTypes.STRING,
+        defaultValue: 'water',
         allowNull: false,
       },
       water: {
@@ -78,29 +90,44 @@ export const initCharacter = (sequelize: Sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      skills: {
-        type: DataTypes.JSON,
-        defaultValue: {},
+      initiative: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        allowNull: false,
       },
       defaultInitiative: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
         allowNull: false,
       },
-      stress: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0,
+      conditions: {
+        type: DataTypes.JSON,
+        defaultValue: [],
         allowNull: false,
       },
-      initiative: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0,
+      notes: {
+        type: DataTypes.TEXT,
+        defaultValue: '',
+        allowNull: false,
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+        allowNull: false,
+      },
+      updated_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
         allowNull: false,
       },
     },
     {
       tableName: 'characters',
       sequelize,
+      underscored: true,
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
     }
   );
 
