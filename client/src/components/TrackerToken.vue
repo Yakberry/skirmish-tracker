@@ -1,7 +1,9 @@
 <template>
   <div v-if="character" class="tracker-token">
     <div class="character-main">
-      <div class="character-name">{{ character.name }}</div>
+      <div class="character-name">
+        {{ character.name }}
+      </div>
       <img
         class="tracker-token__stance"
         src="../assets/image/Water.png"
@@ -80,7 +82,6 @@
 import { computed } from "vue";
 
 import type { BattleCharacter } from "@/types";
-
 
 const props = defineProps<{
   character: BattleCharacter;

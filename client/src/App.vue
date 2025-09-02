@@ -44,6 +44,6 @@ button {
 }
 
 button:hover {
-  background-color: var(--color-darker);
+  background-color: var(--color-tertiary-dark);
 }
 </style>

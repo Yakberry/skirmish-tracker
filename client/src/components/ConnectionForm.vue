@@ -28,75 +28,25 @@
       >
         Создать новую сессию (стать мастером)
       </button>
-      <button v-else @click="joinSession">Присоединиться как игрок</button>
+      <button v-else @click="joinSession">
+        Присоединиться как игрок
+      </button>
     </div>
 
-    <CircularButton :options="options" :radius="140">
-      <i class="fas"></i>
-    </CircularButton>
-
-    <div class="donut-container">
-      <button @click="chooseStance">Выбрать стойку</button>
-      <transition name="fade">
-        <vc-donut
-          v-show="isStanceChoosing"
-          size="160"
-          unit="px"
-          background="transparent"
-          :thickness="40"
-          :sections="sections"
-          :total="100"
-          :start-angle="0"
-          auto-adjust-text-size
-          @section-click="optionClick"
-        >
-          <template #default>
-            <div class="choose-stance__container">
-              <div class="choose-stance__inner-container-top">
-                <img
-                  class="choose-stance__icon"
-                  src="../assets/image/Earth.png"
-                  alt="water"
-                />
-                <img
-                  class="choose-stance__icon"
-                  src="../assets/image/Fire.png"
-                  alt="water"
-                />
-              </div>
-              <div class="choose-stance__inner-container-center">
-                <img
-                  class="choose-stance__icon"
-                  src="../assets/image/Water.png"
-                  alt="water"
-                />
-                <img
-                  class="choose-stance__icon"
-                  src="../assets/image/Air.png"
-                  alt="water"
-                />
-              </div>
-              <img
-                class="choose-stance__icon"
-                src="../assets/image/Void.png"
-                alt="water"
-              />
-            </div>
-          </template>
-        </vc-donut>
-      </transition>
-    </div>
+    <StanceChooseButton @change-stance="optionClick">
+      <img src="../assets/image/Void.png" alt="">
+    </StanceChooseButton>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { VcDonut } from "vue-css-donut-chart";
 
-import CircularButton from "@/components/CircularButton.vue";
 import SparkButton from "@/components/SparkButton.vue";
+import StanceChooseButton from "@/components/StanceChooseButton.vue";
 import { useSocketStore } from "@/stores/socket";
 import "vue-css-donut-chart/dist/vcdonut.css";
+import { Ring } from "@/types";
 
 // Обработчик для touch-устройств
 // document.querySelectorAll(".spark-btn").forEach(button => {
@@ -106,14 +56,13 @@ import "vue-css-donut-chart/dist/vcdonut.css";
 //   });
 // });
 
-const serverUrl = ref("http://192.168.1.137:3000");
-// const serverUrl = ref("http://192.168.25.130:3000");
+// const serverUrl = ref("http://192.168.1.137:3000");
+const serverUrl = ref("http://192.168.25.140:3000");
 const playerName = ref("");
 const sessionCode = ref("");
 const socketStore = useSocketStore();
 
 const isConnected = computed(() => socketStore.isConnected);
-const isStanceChoosing = ref<boolean>(false);
 
 const connect = () => {
   socketStore.connect(serverUrl.value);
@@ -131,53 +80,10 @@ const joinSession = () => {
   }
 };
 
-const optionClick = (section, event) => {
-  console.log("option click", section.label);
-};
-const chooseStance = () => {
-  isStanceChoosing.value = !isStanceChoosing.value;
+const optionClick = (stance: Ring, event) => {
+  console.log("option click", stance);
 };
 
-const sections = [
-  { label: "Fire", value: 20, color: "darkgoldenrod" },
-  { label: "Air", value: 20, color: "lightgray" },
-  { label: "Void", value: 20, color: "darkslategray" },
-  { label: "Water", value: 20, color: "violet" },
-  { label: "Earth", value: 20, color: "darkgreen" }
-];
-
-const options = [
-  {
-    icon: "lion-icon",
-    text: "Главная",
-    action: () => console.log("Home clicked")
-  },
-  {
-    icon: "fas fa-cog",
-    text: "Настройки",
-    bgClass: "bg-blue",
-    action: () => console.log("Settings clicked")
-  },
-  {
-    icon: "fas fa-user",
-    text: "Профиль",
-    bgClass: "bg-green",
-    action: () => console.log("Profile clicked")
-  },
-  {
-    icon: "fas fa-info",
-    text: "О программе",
-    bgClass: "bg-yellow",
-    action: () => console.log("About clicked")
-  },
-  {
-    icon: "fas fa-envelope",
-    text: "Сообщения",
-    bgClass: "bg-purple",
-    action: () => console.log("Messages clicked")
-  }
-  // ... more options
-];
 </script>
 
 <style lang="css">

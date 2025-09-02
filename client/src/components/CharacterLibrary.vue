@@ -2,6 +2,15 @@
   <div class="character-library">
     <h2>Библиотека персонажей</h2>
 
+    <div>
+      <CharacterCard
+        v-for="character in characters"
+        :key="character.id"
+        :character="character"
+        @change-stance="changeStance(character.id)"
+      />
+    </div>
+
     <div v-if="libraryStore.error" class="error-message">
       {{ libraryStore.error }}
     </div>
@@ -119,7 +128,9 @@
           <button type="submit" :disabled="libraryStore.isLoading">
             {{ libraryStore.isLoading ? "Создание..." : "Создать" }}
           </button>
-          <button type="button" @click="resetForm">Сбросить</button>
+          <button type="button" @click="resetForm">
+            Сбросить
+          </button>
         </div>
       </form>
     </div>
@@ -129,6 +140,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 
+import CharacterCard from "@/components/Character.vue";
 import { useLibraryStore } from "@/stores/library";
 import { useSocketStore } from "@/stores/socket";
 
@@ -149,6 +161,39 @@ const newCharacter = ref<Partial<Character>>({
 });
 
 const isSectionOpened = ref<boolean>(false);
+
+const characters = ref([
+  {
+    id: 1,
+    name: "Цукико",
+    stress: 4,
+    maxStress: 12,
+    initiative: 18,
+    stance: "water",
+    conditions: ["unmasked", "turn-ended", "counterattack-spent", "unconcious", "burning", "heavy wound: Fire"]
+  },
+  {
+    id: 2,
+    name: "Кенширо",
+    stress: 8,
+    maxStress: 10,
+    initiative: 15,
+    stance: "fire",
+    conditions: ["turn-ended", "burning"]
+  }
+]);
+
+const changeStance = characterId => {
+  const character = characters.value.find(c => c.id === characterId);
+
+  if (!character) return;
+
+  const stances = ["water", "fire", "air", "earth", "void"];
+  const currentIndex = stances.indexOf(character.stance);
+  const nextIndex = (currentIndex + 1) % stances.length;
+
+  character.stance = stances[nextIndex];
+};
 
 onMounted(() => {
   refreshCharacters();

@@ -44,3 +44,12 @@ export interface CreateCharacterRequest {
   void: number;
   skills?: Record<string, number>;
 }
+
+/* eslint-disable no-unused-vars */
+export enum Ring {
+  Water,
+  Earth,
+  Fire,
+  Air,
+  Void
+}
