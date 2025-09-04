@@ -217,7 +217,12 @@ input, select {
     border-radius: var(--border-radius);
     background-color: rgba(0, 0, 0, 0.4);
     color: var(--color-light);
+    font-weight: bold;
     transition: var(--transition-fast);
+}
+
+input::placeholder, select::placeholder {
+    color: var(--color-light-muted);
 }
 
 input:focus, select:focus {

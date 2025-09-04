@@ -1,19 +1,21 @@
 <template>
-  <div class="character__card scroll-effect">
-    <div
-      class="stance-button"
-      :class="character.stance"
-      @click="$emit('change-stance')"
-    >
-      <i :class="'fas fa-' + stanceIcon">{{ stanceIcon }}</i>
-    </div>
+  <div v-if="character" class="character__card scroll-effect" @click="openCharacterPage(character.name)">
+    <StanceChooseButton class="stance-button" @change-stance="optionClick">
+      <img
+        id="stance-icon"
+        class="character-stance__icon"
+        :class="character.stance.toLowerCase()"
+        :src="getImg"
+        alt=""
+      />
+    </StanceChooseButton>
 
     <div class="character-info">
       <div class="character-name">
         {{ character.name }}
       </div>
       <div class="character-stress">
-        Стресс: {{ character.stress }}/{{ character.maxStress }}
+        Стресс: {{ character.strife }}/{{ character.maxStrife }}
       </div>
       <div class="character-initiative">
         Инициатива: {{ character.initiative }}
@@ -46,37 +48,41 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, type PropType, ref } from "vue";
+
+import StanceChooseButton from "@/components/StanceChooseButton.vue";
+import { useSocketStore } from "@/stores";
+import { type CharacterData } from "@/types";
 
 const props = defineProps({
   character: {
-    type: Object,
-    required: true,
-    default: () => ({
-      name: "",
-      stress: 0,
-      maxStress: 0,
-      initiative: 0,
-      stance: "water",
-      conditions: []
-    })
+    type: Object as PropType<CharacterData>,
+    required: true
   }
 });
 
-defineEmits(["change-stance"]);
+// const stanceIcon = ref<string>("Void");
+const characterCurrent = ref<CharacterData>(props.character);
+
+const socketStore = useSocketStore();
+const emit = defineEmits(["update-character"]);
+
+const getImg = computed(() => {
+  return `/src/assets/image/${props.character?.stance}.png`;
+});
 
 // Получение иконки для текущей стойки
-const stanceIcon = computed(() => {
-  const icons = {
-    "water": "tint",
-    "fire": "fire",
-    "air": "wind",
-    "earth": "mountain",
-    "void": "circle"
-  };
-
-  return icons[props.character.stance] || "question";
-});
+// const stanceIcon = computed(() => {
+//   const icons = {
+//     "water": "Water",
+//     "fire": "fire",
+//     "air": "wind",
+//     "earth": "mountain",
+//     "void": "circle"
+//   };
+//
+//   return icons[props.character.stance] || "question";
+// });
 
 // Фильтрация маленьких состояний
 const smallConditions = computed(() => {
@@ -91,6 +97,19 @@ const largeConditions = computed(() => {
     !["unmasked", "turn-ended", "counterattack-spent"].includes(condition)
   );
 });
+
+const optionClick = (stance: string, event) => {
+  console.log("option click", stance);
+
+  // stanceIcon.value = stance;
+  characterCurrent.value.stance = stance.toLowerCase();
+  updateCharacter();
+};
+
+const updateCharacter = () => {
+  console.log("char upd", props.character);
+  emit("update-character", characterCurrent.value);
+};
 
 // Получение класса для состояния
 const getConditionClass = condition => {
@@ -150,6 +169,13 @@ const getConditionLabel = condition => {
 
   return condition;
 };
+
+const openCharacterPage = (characterName: string): void => {
+  console.log("open character " + characterName);
+  if (socketStore.isMaster || socketStore.playerName === characterName) {
+    console.log("agreed to open!");
+  }
+};
 </script>
 
 <style scoped>
@@ -204,11 +230,11 @@ const getConditionLabel = condition => {
   box-shadow: 0 0 15px currentColor;
 }
 
-.water { background: #3498db; }
-.fire { background: #e74c3c; }
-.air { background: #f1c40f; }
-.earth { background: #2ecc71; }
-.void { background: #9b59b6; }
+.water { box-shadow: 0 0 20px blueviolet; }
+.fire { box-shadow: 0 0 20px red; }
+.air { box-shadow: 0 0 20px white; }
+.earth { box-shadow: 0 0 20px brown; }
+.void { box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); }
 
 .character-info {
   display: flex;
@@ -222,8 +248,8 @@ const getConditionLabel = condition => {
   font-size: 1.4rem;
   font-weight: bold;
   margin-bottom: 5px;
-  color: #d4af37;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  /*color: #d4af37;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);*/
   letter-spacing: 1px;
 }
 
@@ -309,5 +335,10 @@ const getConditionLabel = condition => {
 .scroll-effect:hover::after {
   left: 120%;
   opacity: 1;
+}
+
+.character-stance__icon {
+  width: 90px;
+  border-radius: 50%;
 }
 </style>

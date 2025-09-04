@@ -21,7 +21,8 @@ export const useSocketStore = defineStore("socket", {
     sessionId: null,
     isConnected: false,
     isMaster: false,
-    players: []
+    players: [],
+    playerName: ""
   }),
 
   actions: {
@@ -30,39 +31,33 @@ export const useSocketStore = defineStore("socket", {
 
       this.socket.on("connect", () => {
         this.isConnected = true;
-        console.log("Connected to server");
       });
 
       this.socket.on("disconnect", () => {
         this.isConnected = false;
-        console.log("Disconnected from server");
       });
 
-      this.socket.on("session:created", (data: { sessionId: string }) => {
-        this.sessionId = data.sessionId;
-      });
+      this.socket.on(
+        "session:created",
+        (data: { sessionId: string; isMaster: boolean; session: any }) => {
+          this.sessionId = data.sessionId;
+          this.isMaster = data.isMaster;
 
-      this.socket.on("session:master", (data: { isMaster: boolean }) => {
-        this.isMaster = data.isMaster;
-      });
+          // Обновляем хранилище инициативы
+          const initiativeStore = useInitiativeStore();
 
-      this.socket.on("session:state", (data: any) => {
+          initiativeStore.setCharacters(data.session.charactersInBattle || []);
+          initiativeStore.setInitiativeOrder(
+            data.session.initiativeOrder || []
+          );
+        }
+      );
+
+      this.socket.on("session:updated", (session: any) => {
         const initiativeStore = useInitiativeStore();
 
-        initiativeStore.setCharacters(data.charactersInBattle || []);
-        initiativeStore.setInitiativeOrder(data.initiativeOrder || []);
-      });
-
-      this.socket.on("player:joined", (data: { playerName: string }) => {
-        this.players.push(data.playerName);
-      });
-
-      this.socket.on("player:left", (data: { playerName: string }) => {
-        const index = this.players.indexOf(data.playerName);
-
-        if (index > -1) {
-          this.players.splice(index, 1);
-        }
+        initiativeStore.setCharacters(session.charactersInBattle || []);
+        initiativeStore.setInitiativeOrder(session.initiativeOrder || []);
       });
 
       this.socket.on("characters:list", (characters: CharacterData[]) => {
@@ -77,45 +72,27 @@ export const useSocketStore = defineStore("socket", {
         libraryStore.addCharacter(character);
       });
 
-      this.socket.on("character:added", (character: CharacterData) => {
-        const libraryStore = useLibraryStore();
-
-        libraryStore.addCharacter(character);
-      });
-
-      this.socket.on(
-        "characters-in-battle:updated",
-        (characters: BattleCharacter[]) => {
-          const initiativeStore = useInitiativeStore();
-
-          initiativeStore.setCharacters(characters);
-        }
-      );
-
-      this.socket.on("initiative:updated", (initiativeOrder: string[]) => {
-        const initiativeStore = useInitiativeStore();
-
-        initiativeStore.setInitiativeOrder(initiativeOrder);
-      });
-
-      this.socket.on("character:updated", (character: Character) => {
+      this.socket.on("character:updated", (character: CharacterData) => {
         const initiativeStore = useInitiativeStore();
 
         initiativeStore.updateCharacter(character);
+
+        // const libraryStore = useLibraryStore();
+        //
+        // libraryStore.updateCharacter(character);
       });
 
-      this.socket.on(
-        "tracker:state",
-        (data: {
-          characters: BattleCharacter[];
-          initiativeOrder: string[];
-        }) => {
-          const initiativeStore = useInitiativeStore();
+      this.socket.on("player:joined", (data: { playerName: string }) => {
+        this.players.push(data.playerName);
+      });
 
-          initiativeStore.setCharacters(data.characters);
-          initiativeStore.setInitiativeOrder(data.initiativeOrder);
+      this.socket.on("player:left", (data: { playerName: string }) => {
+        const index = this.players.indexOf(data.playerName);
+
+        if (index > -1) {
+          this.players.splice(index, 1);
         }
-      );
+      });
 
       this.socket.on("error", (data: { message: string }) => {
         console.error("Server error:", data.message);
@@ -153,6 +130,7 @@ export const useSocketStore = defineStore("socket", {
     },
 
     updateCharacter(characterId: string, updates: Partial<CharacterData>) {
+      console.log(updates);
       if (this.socket) {
         this.socket.emit("character:update", { characterId, updates });
       }

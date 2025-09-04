@@ -46,4 +46,39 @@ button {
 button:hover {
   background-color: var(--color-tertiary-dark);
 }
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.choose-stance__icon {
+  width: 40px;
+  height: 40px;
+}
+
+.choose-stance__container {
+  display: flex;
+  position: absolute;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.choose-stance__inner-container-top {
+  display: flex;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.choose-stance__inner-container-center {
+  gap: 65px;
+  display: flex;
+  margin-top: 20px;
+}
+
+.cdc-overlay {
+  pointer-events: none;
+  overflow: visible;
+}
 </style>

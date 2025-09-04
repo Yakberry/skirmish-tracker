@@ -1,17 +1,16 @@
 import { defineStore } from "pinia";
 
-
 import { useSocketStore } from "./socket";
 
-import type { Character } from "@/types";
+import type { CharacterData } from "@/types";
 
 interface LibraryState {
-  characters: Character[]
-  isLoading: boolean
-  error: string | null
+  characters: CharacterData[];
+  isLoading: boolean;
+  error: string | null;
 }
 
-export const useLibraryStore = defineStore('library', {
+export const useLibraryStore = defineStore("library", {
   state: (): LibraryState => ({
     characters: [],
     isLoading: false,
@@ -19,59 +18,59 @@ export const useLibraryStore = defineStore('library', {
   }),
 
   actions: {
-    setCharacters(characters: Character[]) {
-      this.characters = characters
-      this.isLoading = false
-      this.error = null
+    setCharacters(characters: CharacterData[]) {
+      this.characters = characters;
+      this.isLoading = false;
+      this.error = null;
     },
 
-    addCharacter(character: Character) {
-      this.characters.push(character)
+    addCharacter(character: CharacterData) {
+      this.characters.push(character);
     },
 
     removeCharacter(characterId: string) {
-      this.characters = this.characters.filter(c => c.id !== characterId)
+      this.characters = this.characters.filter(c => c.id !== characterId);
     },
 
     setLoading(loading: boolean) {
-      this.isLoading = loading
+      this.isLoading = loading;
     },
 
     setError(error: string | null) {
-      this.error = error
-      this.isLoading = false
+      this.error = error;
+      this.isLoading = false;
     },
 
     async loadCharacters() {
-      this.setLoading(true)
-      this.setError(null)
+      this.setLoading(true);
+      this.setError(null);
 
-      const socketStore = useSocketStore()
+      const socketStore = useSocketStore();
 
-      socketStore.requestCharacters()
+      socketStore.requestCharacters();
 
       // Таймаут на случай, если ответ от сервера не придет
       setTimeout(() => {
         if (this.isLoading) {
-          this.setError('Timeout while loading characters')
+          this.setError("Timeout while loading characters");
         }
-      }, 5000)
+      }, 5000);
     },
 
-    async createCharacter(characterData: Partial<Character>) {
-      this.setLoading(true)
-      this.setError(null)
+    async createCharacter(characterData: Partial<CharacterData>) {
+      this.setLoading(true);
+      this.setError(null);
 
-      const socketStore = useSocketStore()
+      const socketStore = useSocketStore();
 
-      socketStore.createCharacter(characterData)
+      socketStore.createCharacter(characterData);
 
       // Таймаут на случай, если ответ от сервера не придет
       setTimeout(() => {
         if (this.isLoading) {
-          this.setError('Timeout while creating character')
+          this.setError("Timeout while creating character");
         }
-      }, 5000)
+      }, 5000);
     }
   }
-})
+});

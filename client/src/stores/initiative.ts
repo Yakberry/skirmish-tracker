@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 
 import type { BattleCharacter } from "@/types";
+import { useSocketStore } from "@/stores/socket.ts";
 
 interface InitiativeState {
   characters: BattleCharacter[];
@@ -28,6 +29,10 @@ export const useInitiativeStore = defineStore("initiative", {
       if (index !== -1) {
         this.characters[index] = character;
       }
+
+      // const socketStore = useSocketStore();
+      //
+      // socketStore.updateCharacter(character.id!, character);
     },
     updateCharacterInitiative(characterId: string, newInitiative: number) {
       // const socketStore = useSocketStore();

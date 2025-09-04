@@ -61,6 +61,7 @@
 import { computed } from "vue";
 
 import { useSocketStore } from "@/stores/socket";
+
 import type { BattleCharacter } from "@/types";
 
 const props = defineProps<{

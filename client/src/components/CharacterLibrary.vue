@@ -7,7 +7,7 @@
         v-for="character in characters"
         :key="character.id"
         :character="character"
-        @change-stance="changeStance(character.id)"
+        @click="openCharacterPage(character.name)"
       />
     </div>
 
@@ -43,8 +43,9 @@
           <div class="character-info">
             <h4>{{ character.name }}</h4>
             <div class="stats">
-              <span class="stat">❤️ {{ character.health }}</span>
-              <span class="stat">💨 {{ character.fatigue }}</span>
+              <span class="stat">☯️: {{ character.strife }}</span>
+              <span class="stat">🛡️: {{ character.strife + ` / ` + character.maxStrife }}</span>
+              <span class="stat">🌪️: {{ character.initiative + ` / ` + character.defaultInitiative }}</span>
             </div>
             <div class="rings">
               <span class="ring">В{{ character.water }}</span>
@@ -82,15 +83,15 @@
       <form v-show="isSectionOpened" @submit.prevent="createCharacter">
         <input v-model="newCharacter.name" placeholder="Имя" required />
         <input
-          v-model.number="newCharacter.health"
+          v-model.number="newCharacter.defaultInitiative"
           type="number"
-          placeholder="Здоровье"
+          placeholder="Инициатива"
           required
         />
         <input
-          v-model.number="newCharacter.fatigue"
+          v-model.number="newCharacter.maxStrife"
           type="number"
-          placeholder="Усталость"
+          placeholder="Стресс"
           required
         />
         <input
@@ -144,15 +145,15 @@ import CharacterCard from "@/components/Character.vue";
 import { useLibraryStore } from "@/stores/library";
 import { useSocketStore } from "@/stores/socket";
 
-import type { Character } from "@/types";
+import type { CharacterData } from "@/types";
 
 const libraryStore = useLibraryStore();
 const socketStore = useSocketStore();
 
-const newCharacter = ref<Partial<Character>>({
+const newCharacter = ref<Partial<CharacterData>>({
   name: "",
-  health: 10,
-  fatigue: 10,
+  defaultInitiative: 0,
+  maxStrife: 10,
   water: 2,
   earth: 2,
   fire: 2,
@@ -183,17 +184,24 @@ const characters = ref([
   }
 ]);
 
-const changeStance = characterId => {
-  const character = characters.value.find(c => c.id === characterId);
-
-  if (!character) return;
-
-  const stances = ["water", "fire", "air", "earth", "void"];
-  const currentIndex = stances.indexOf(character.stance);
-  const nextIndex = (currentIndex + 1) % stances.length;
-
-  character.stance = stances[nextIndex];
+const openCharacterPage = (characterName: string): void => {
+  console.log("open character " + characterName);
+  if (socketStore.isMaster || socketStore.playerName === characterName) {
+    console.log("agreed to open!");
+  }
 };
+
+// const changeStance = characterId => {
+//   const character = characters.value.find(c => c.id === characterId);
+//
+//   if (!character) return;
+//
+//   const stances = ["water", "fire", "air", "earth", "void"];
+//   const currentIndex = stances.indexOf(character.stance);
+//   const nextIndex = (currentIndex + 1) % stances.length;
+//
+//   character.stance = stances[nextIndex];
+// };
 
 onMounted(() => {
   refreshCharacters();
@@ -221,8 +229,8 @@ const createCharacter = () => {
 const resetForm = () => {
   newCharacter.value = {
     name: "",
-    health: 10,
-    fatigue: 10,
+    defaultInitiative: 10,
+    maxStrife: 10,
     water: 2,
     earth: 2,
     fire: 2,

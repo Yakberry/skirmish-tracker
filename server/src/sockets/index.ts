@@ -8,14 +8,16 @@ import {
   UpdateCharacterRequest
 } from "../types";
 import { Character } from '../models/Character';
+import { sequelize } from "../models";
 
 const activeSessions = new Map<string, SessionData>();
 
+// Упрощенная версия с оптимизированными событиями
 export const initializeSockets = (io: Server): void => {
   io.on('connection', (socket: AppSocket) => {
     console.log(`User ${socket.id} connected`);
 
-    // Создание новой игровой сессии
+    // Создание сессии
     socket.on('session:create', () => {
       const sessionId = generateSessionId();
       activeSessions.set(sessionId, {
@@ -29,11 +31,15 @@ export const initializeSockets = (io: Server): void => {
       socket.sessionId = sessionId;
       socket.isMaster = true;
 
-      socket.emit('session:created', { sessionId });
-      socket.emit('session:master', { isMaster: true });
+      // Отправляем одно событие с всей информацией
+      socket.emit('session:created', {
+        sessionId,
+        isMaster: true,
+        session: activeSessions.get(sessionId)
+      });
     });
 
-    // Присоединение к существующей сессии
+    // Присоединение к сессии
     socket.on('session:join', (data: { sessionId: string; playerName: string }) => {
       const { sessionId, playerName } = data;
       const session = activeSessions.get(sessionId);
@@ -48,12 +54,18 @@ export const initializeSockets = (io: Server): void => {
       socket.playerName = playerName;
       socket.isMaster = false;
 
-      socket.emit('session:master', { isMaster: false });
-      socket.emit('session:state', session);
+      // Отправляем информацию о сессии
+      socket.emit('session:created', {
+        sessionId,
+        isMaster: false,
+        session
+      });
+
+      // Уведомляем других участников
       socket.to(sessionId).emit('player:joined', { playerName });
     });
 
-    // Запрос списка персонажей из библиотеки
+    // Запрос списка персонажей
     socket.on('characters:request', async () => {
       try {
         const characters = await Character.findAll({
@@ -75,17 +87,77 @@ export const initializeSockets = (io: Server): void => {
         }
 
         const character = await Character.create(data);
+        // Отправляем создателю и broadcast всем
         socket.emit('character:created', character);
-        socket.broadcast.emit('character:added', character);
+        socket.broadcast.emit('character:created', character);
       } catch (error) {
         console.error('Error creating character:', error);
         socket.emit('error', { message: 'Failed to create character' });
       }
     });
 
+    // Обновление персонажа
+    socket.on('character:update', async (data: UpdateCharacterRequest) => {
+      try {
+        if (!socket.sessionId) {
+          socket.emit('error', { message: 'Not in a session' });
+          return;
+        }
+
+        const session = activeSessions.get(socket.sessionId);
+        if (!session) {
+          socket.emit('error', { message: 'Session not found' });
+          return;
+        }
+
+        // Обновляем в базе
+        const [affectedCount] = await Character.update(data.updates, {
+          where: { id: data.characterId }
+        });
+
+        if (affectedCount === 0) {
+          socket.emit('error', { message: 'Character not found' });
+          return;
+        }
+
+        const updatedCharacter = await Character.findByPk(data.characterId);
+        if (!updatedCharacter) {
+          socket.emit('error', { message: 'Character not found after update' });
+          return;
+        }
+
+        // Обновляем в сессии
+        const battleCharIndex = session.charactersInBattle.findIndex(c => c.id === data.characterId);
+        if (battleCharIndex !== -1) {
+          session.charactersInBattle[battleCharIndex] = {
+            ...updatedCharacter.toJSON(),
+            isVisible: session.charactersInBattle[battleCharIndex].isVisible
+          };
+        }
+
+        // Отправляем обновление всем
+        io.to(socket.sessionId).emit('character:updated', updatedCharacter);
+
+        // Если изменилась инициатива, обновляем порядок
+        if (data.updates.initiative !== undefined) {
+          session.initiativeOrder = session.charactersInBattle
+            .filter(c => c.initiative > 0)
+            .sort((a, b) => b.initiative - a.initiative)
+            .map(c => c.id!);
+
+          // Отправляем обновление сессии
+          io.to(socket.sessionId).emit('session:updated', session);
+        }
+      } catch (error) {
+        console.error('Error updating character:', error);
+        socket.emit('error', { message: 'Failed to update character' });
+      }
+    });
+
     // Добавление персонажа в бой
     socket.on('character:add-to-battle', async (data: { characterId: string }) => {
       try {
+        console.log(data);
         if (!socket.sessionId) {
           socket.emit('error', { message: 'Not in a session' });
           return;
@@ -109,85 +181,24 @@ export const initializeSockets = (io: Server): void => {
         };
 
         session.charactersInBattle.push(battleCharacter);
-        io.to(socket.sessionId).emit('characters-in-battle:updated', session.charactersInBattle);
+        // session.initiativeOrder = session.charactersInBattle
+        //   .filter(c => c.initiative > 0)
+        //   .sort((a, b) => b.initiative - a.initiative)
+        //   .map(c => c.id!);
+        session.initiativeOrder.push(battleCharacter.id!)
+
+        // Отправляем обновление всей сессии
+        io.to(socket.sessionId).emit('session:updated', session);
       } catch (error) {
         console.error('Error adding character to battle:', error);
         socket.emit('error', { message: 'Failed to add character to battle' });
       }
     });
 
-    // Единый обработчик обновления персонажа
-    socket.on('character:update', async (data: UpdateCharacterRequest) => {
-      try {
-        if (!socket.sessionId) {
-          socket.emit('error', { message: 'Not in a session' });
-          return;
-        }
+    // Сброс значений персонажей
+    // ... остальной код ...
 
-        const session = activeSessions.get(socket.sessionId);
-        if (!session) {
-          socket.emit('error', { message: 'Session not found' });
-          return;
-        }
-
-        // Обновляем персонажа в базе данных
-        const [affectedCount] = await Character.update(data.updates, {
-          where: { id: data.characterId }
-        });
-
-        if (affectedCount === 0) {
-          socket.emit('error', { message: 'Character not found' });
-          return;
-        }
-
-        // Получаем обновленного персонажа
-        const updatedCharacter = await Character.findByPk(data.characterId);
-        if (!updatedCharacter) {
-          socket.emit('error', { message: 'Character not found after update' });
-          return;
-        }
-
-        // Обновляем персонажа в текущей сессии
-        const battleCharIndex = session.charactersInBattle.findIndex(c => c.id === data.characterId);
-        if (battleCharIndex !== -1) {
-          session.charactersInBattle[battleCharIndex] = {
-            ...updatedCharacter.toJSON(),
-            isVisible: session.charactersInBattle[battleCharIndex].isVisible
-          };
-        }
-
-        // Если обновили инициативу, пересортировываем
-        if (data.updates.initiative !== undefined) {
-          session.initiativeOrder = session.charactersInBattle
-            .filter(c => c.initiative > 0)
-            .sort((a, b) => b.initiative - a.initiative)
-            .map(c => c.id!);
-
-          io.to(socket.sessionId).emit('initiative:updated', session.initiativeOrder);
-        }
-
-        // Рассылаем обновленного персонажа всем участникам сессии
-        io.to(socket.sessionId).emit('character:updated', updatedCharacter);
-      } catch (error) {
-        console.error('Error updating character:', error);
-        socket.emit('error', { message: 'Failed to update character' });
-      }
-    });
-
-    // Синхронизация состояния трекера
-    socket.on('tracker:sync', () => {
-      if (!socket.sessionId || !socket.isMaster) return;
-
-      const session = activeSessions.get(socket.sessionId);
-      if (session) {
-        io.to(socket.sessionId).emit('tracker:state', {
-          characters: session.charactersInBattle,
-          initiativeOrder: session.initiativeOrder
-        });
-      }
-    });
-
-    // Сброс инициативы и strife
+    // Сброс значений персонажей
     socket.on('characters:reset', async () => {
       try {
         if (!socket.sessionId || !socket.isMaster) return;
@@ -195,38 +206,75 @@ export const initializeSockets = (io: Server): void => {
         const session = activeSessions.get(socket.sessionId);
         if (!session) return;
 
-        // Сбрасываем значения для всех персонажей в бою
-        for (const character of session.charactersInBattle) {
-          const [affectedCount] = await Character.update(
-            {
-              initiative: character.defaultInitiative,
-              strife: 0
-            },
-            { where: { id: character.id } }
-          );
+        // Подготавливаем данные для обновления
+        const updateData = session.charactersInBattle
+          .filter(character => character.id)
+          .map(character => ({
+            id: character.id!,
+            initiative: character.defaultInitiative || 0,
+            strife: 0,
+            updated_at: new Date()
+          }));
 
-          if (affectedCount > 0) {
-            character.initiative = character.defaultInitiative;
+        if (updateData.length === 0) return;
+
+        // 1. Сначала обновляем в памяти
+        session.charactersInBattle.forEach(character => {
+          if (character.id) {
+            character.initiative = character.defaultInitiative || 0;
             character.strife = 0;
           }
+        });
+
+        // 2. Пытаемся обновить базу (но не блокируемся на ошибках)
+        try {
+          // Используем транзакцию для надежности
+          await sequelize.transaction(async (transaction) => {
+            for (const data of updateData) {
+              await Character.update(
+                {
+                  initiative: data.initiative,
+                  strife: data.strife,
+                  updated_at: data.updated_at
+                },
+                {
+                  where: { id: data.id },
+                  transaction
+                }
+              );
+            }
+          });
+        } catch (dbError) {
+          console.warn('Database update partially failed, but in-memory state is updated:', dbError);
+          // Можно добавить retry логику здесь
         }
 
-        // Пересортировываем инициативу
+        // 3. Обновляем порядок инициативы
         session.initiativeOrder = session.charactersInBattle
           .filter(c => c.initiative > 0)
           .sort((a, b) => b.initiative - a.initiative)
           .map(c => c.id!);
 
-        // Рассылаем обновления всем участникам сессии
-        io.to(socket.sessionId).emit('characters-in-battle:updated', session.charactersInBattle);
-        io.to(socket.sessionId).emit('initiative:updated', session.initiativeOrder);
+        // 4. Отправляем обновление
+        io.to(socket.sessionId).emit('session:updated', session);
+
       } catch (error) {
-        console.error('Error resetting characters:', error);
+        console.error('Error in characters:reset:', error);
         socket.emit('error', { message: 'Failed to reset characters' });
       }
     });
 
-    // Обработка отключения клиента
+    // Синхронизация трекера
+    socket.on('tracker:sync', () => {
+      if (!socket.sessionId || !socket.isMaster) return;
+
+      const session = activeSessions.get(socket.sessionId);
+      if (session) {
+        io.to(socket.sessionId).emit('session:updated', session);
+      }
+    });
+
+    // Обработка отключения
     socket.on('disconnect', () => {
       console.log(`User ${socket.id} disconnected`);
 

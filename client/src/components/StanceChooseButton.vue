@@ -1,65 +1,67 @@
 <template>
   <div class="stance-choose__container">
-    <button ref="mainButton" @click="openChooseStance">
+    <div ref="mainButton" class="stance-choose__button" @click.stop="openChooseStance">
       <slot></slot>
-    </button>
-    <transition name="fade">
-      <div
-        v-if="isStanceChoosing"
-        class="stance-choose__backdrop"
-        @click="closeChooseStance"
-      >
-        <div ref="donut" class="stance-choose__donut-container">
-          <vc-donut
-            class="stance-choose__donut"
-            size="160"
-            unit="px"
-            background="transparent"
-            :thickness="40"
-            :sections="sections"
-            :total="100"
-            :start-angle="0"
-            auto-adjust-text-size
-            :style="donutStyle"
-            @section-click="optionClick"
-          >
-            <template #default>
-              <div class="choose-stance__container">
-                <div class="choose-stance__inner-container-top">
+    </div>
+    <Teleport to="body">
+      <transition name="fade">
+        <div
+          v-if="isStanceChoosing"
+          class="stance-choose__backdrop"
+          @click="closeChooseStance"
+        >
+          <div ref="donut" class="stance-choose__donut-container">
+            <vc-donut
+              class="stance-choose__donut"
+              size="160"
+              unit="px"
+              background="transparent"
+              :thickness="40"
+              :sections="sections"
+              :total="100"
+              :start-angle="0"
+              auto-adjust-text-size
+              :style="donutStyle"
+              @section-click="optionClick"
+            >
+              <template #default>
+                <div class="choose-stance__container">
+                  <div class="choose-stance__inner-container-top">
+                    <img
+                      class="choose-stance__icon"
+                      src="../assets/image/Earth.png"
+                      alt="water"
+                    />
+                    <img
+                      class="choose-stance__icon"
+                      src="../assets/image/Fire.png"
+                      alt="water"
+                    />
+                  </div>
+                  <div class="choose-stance__inner-container-center">
+                    <img
+                      class="choose-stance__icon"
+                      src="../assets/image/Water.png"
+                      alt="water"
+                    />
+                    <img
+                      class="choose-stance__icon"
+                      src="../assets/image/Air.png"
+                      alt="water"
+                    />
+                  </div>
                   <img
                     class="choose-stance__icon"
-                    src="../assets/image/Earth.png"
-                    alt="water"
-                  />
-                  <img
-                    class="choose-stance__icon"
-                    src="../assets/image/Fire.png"
+                    src="../assets/image/Void.png"
                     alt="water"
                   />
                 </div>
-                <div class="choose-stance__inner-container-center">
-                  <img
-                    class="choose-stance__icon"
-                    src="../assets/image/Water.png"
-                    alt="water"
-                  />
-                  <img
-                    class="choose-stance__icon"
-                    src="../assets/image/Air.png"
-                    alt="water"
-                  />
-                </div>
-                <img
-                  class="choose-stance__icon"
-                  src="../assets/image/Void.png"
-                  alt="water"
-                />
-              </div>
-            </template>
-          </vc-donut>
+              </template>
+            </vc-donut>
+          </div>
         </div>
-      </div>
-    </transition>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
@@ -90,11 +92,11 @@ export default defineComponent({
     const donutStyle = ref<String>("");
 
     const sections = [
-      { label: "fire", value: 20, color: "darkgoldenrod" },
-      { label: "air", value: 20, color: "lightgray" },
-      { label: "void", value: 20, color: "darkslategray" },
-      { label: "water", value: 20, color: "violet" },
-      { label: "earth", value: 20, color: "darkgreen" }
+      { label: "Fire", value: 20, color: "darkgoldenrod" },
+      { label: "Air", value: 20, color: "lightgray" },
+      { label: "Void", value: 20, color: "darkslategray" },
+      { label: "Water", value: 20, color: "violet" },
+      { label: "Earth", value: 20, color: "darkgreen" }
     ];
 
     const optionClick = (section, event) => {
@@ -224,5 +226,9 @@ export default defineComponent({
 
 .stance-choose__donut-container {
   position: fixed;
+}
+
+.stance-choose__button {
+  display: flex;
 }
 </style>

@@ -6,7 +6,9 @@
         <button class="sync-button" @click="syncTracker">
           Синхронизировать
         </button>
-        <button class="reset-button" @click="resetCharacters">Сбросить</button>
+        <button class="reset-button" @click="resetCharacters">
+          Сбросить
+        </button>
       </div>
     </div>
 
@@ -15,13 +17,13 @@
         Нет персонажей в бою. Добавьте персонажей из библиотеки.
       </div>
 
-      <TrackerToken
+      <Character
         v-for="characterId in initiativeStore.initiativeOrder"
         :key="characterId"
         :character="findCharacter(characterId)"
         :is-master="socketStore.isMaster"
         @update-initiative="updateInitiative"
-        @update-stress="updateStress"
+        @update-character="updateCharacter"
       />
     </div>
   </div>
@@ -35,6 +37,8 @@ import { useSocketStore } from "@/stores/socket";
 import TrackerToken from "./TrackerToken.vue";
 
 import type { BattleCharacter } from "@/types";
+import Character from "@/components/Character.vue";
+import CharacterCard from "@/components/Character.vue";
 
 const initiativeStore = useInitiativeStore();
 const socketStore = useSocketStore();
@@ -46,13 +50,21 @@ const findCharacter = (characterId: string): BattleCharacter | undefined => {
 const updateInitiative = (characterId: string, newInitiative: number) => {
   initiativeStore.updateCharacterInitiative(characterId, newInitiative);
 };
-const updateCharacter = (characterId: string, newInitiative: number) => {
-  initiativeStore.updateCharacterInitiative(characterId, newInitiative);
+const updateCharacter = (character: BattleCharacter) => {
+  console.log("char upd in trackerList");
+  initiativeStore.updateCharacter(character);
+
+  // const updateField = (field: string, event: Event) => {
+  //   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+  //   const value = field === "notes" ? target.value : Number(target.value);
+
+    socketStore.updateCharacter(character.id!, character);
+  // };
 };
 
-const updateStress = (characterId: string, newStress: number) => {
-  initiativeStore.updateCharacterStress(characterId, newStress);
-};
+// const updateStress = (characterId: string, newStress: number) => {
+//   initiativeStore.updateCharacterStress(characterId, newStress);
+// };
 
 const syncTracker = () => {
   socketStore.syncTracker();
